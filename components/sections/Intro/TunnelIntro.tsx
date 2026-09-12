@@ -72,6 +72,7 @@ export default function TunnelIntro({ text = "CYCLE WALA" }: { text?: string }) 
       while (idx > 1 && !images[idx]) idx--;
       const img = images[idx];
       if (!img || idx === currentDrawn) return;
+      if (!canvas || !ctx2d) return;
       currentDrawn = idx;
 
       const w = canvas.width;
