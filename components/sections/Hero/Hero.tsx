@@ -150,12 +150,11 @@ export default function Hero() {
       };
       window.addEventListener("mousemove", onMove);
 
-      /* ---------- Scroll: gentle layered exit + a slow zoom into the bike ----------
-         The zoom is a smooth `scale`, kept off the x/y axes the mouse-parallax
-         quickTo above already owns, so the two never fight over the same
-         transform channel. `scrub: true` (no number) ties it directly to
-         scroll position — no inertia, no lag, exactly as far as you've
-         scrolled. */
+      /* ---------- Scroll: gentle layered exit + a soft zoom into the bike ----------
+         The bike video already had its moment in the opening section above,
+         so this stays simple: the marketing copy fades, the bike scales up
+         slightly, one caption fades in. No runway needed — this rides the
+         hero's own natural top-top→bottom-top transition into About. */
       const exitTl = gsap.timeline({
         scrollTrigger: { trigger: el, start: "top top", end: "bottom top", scrub: true },
       });
@@ -164,11 +163,8 @@ export default function Hero() {
         .to(`.${styles.arch}`, { y: 50 }, 0)
         .to([`.${styles.sideL}`, `.${styles.sideR}`], { y: -34 }, 0)
         .to(`.${styles.ambient}`, { autoAlpha: 0 }, 0)
-        .to(`.${styles.portrait}`, { scale: 1.5, ease: "none" }, 0)
-        /* chapter 1 → chapter 2, like the reference: the wide-shot headline
-           fades out as the zoom lands, the detail badge fades in behind it */
-        .to(`.${styles.stageCaption}`, { autoAlpha: 0, y: -10, ease: "none" }, 0.22)
-        .from(`.${styles.detailCallout}`, { autoAlpha: 0, y: 14, ease: "none" }, 0.42);
+        .to(`.${styles.portrait}`, { scale: 1.12, ease: "none" }, 0)
+        .from(`.${styles.detailCallout}`, { autoAlpha: 0, y: 14, ease: "none" }, 0.25);
 
       return () => window.removeEventListener("mousemove", onMove);
     }, el);
@@ -232,25 +228,14 @@ export default function Hero() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             className={styles.portrait}
-            src="/images/hero-bike-dark.svg"
+            src="/images/hero-bike.svg"
             alt="Cycle Wala — bicycle store, accessories and services"
             width={554}
             height={573}
             data-depth="0.03"
           />
 
-          <div className={styles.stageCaption} aria-hidden="true">
-            <span className={styles.stageCaptionHead}>
-              Every cycle. <em>Properly set up.</em>
-            </span>
-          </div>
-
           <div className={styles.detailCallout} aria-hidden="true">
-            <span className={styles.detailBadge}>
-              100%
-              <br />
-              Checked
-            </span>
             <span className={styles.detailLabel}>Genuine Parts</span>
             <span className={styles.detailMicro}>
               Every cycle checked and set up before it leaves the shop.
