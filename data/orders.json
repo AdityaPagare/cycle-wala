@@ -1,0 +1,45 @@
+[
+  {
+    "id": "CW-MU55ZWYA",
+    "customer": {
+      "name": "Test Customer",
+      "phone": "9999999999",
+      "address": "Test Address, Test City"
+    },
+    "items": [
+      {
+        "slug": "neufman-ace",
+        "brand": "Neufman",
+        "model": "Ace",
+        "price": 12000,
+        "qty": 2
+      }
+    ],
+    "total": 24000,
+    "status": "new",
+    "createdAt": "2026-09-17T06:44:44.818Z",
+    "updatedAt": "2026-09-17T06:54:46.526Z"
+  },
+  {
+    "id": "CW-MU56EPDY",
+    "customer": {
+      "name": "sdfa",
+      "phone": "dfsd",
+      "address": "sdfas",
+      "note": "dfas"
+    },
+    "items": [
+      {
+        "slug": "neufman-annecy",
+        "brand": "Neufman",
+        "model": "Annecy",
+        "price": 12990,
+        "qty": 1
+      }
+    ],
+    "total": 12990,
+    "status": "new",
+    "createdAt": "2026-09-17T06:56:14.854Z",
+    "updatedAt": "2026-09-17T06:56:14.854Z"
+  }
+]

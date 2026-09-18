@@ -1,29 +1,72 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { gsap, ScrollTrigger } from "@/lib/gsap";
+import { CATEGORY_META } from "@/data/products-seed";
 import { useLang } from "@/lib/i18n";
+import { useCart } from "@/lib/cart";
+import { SHOP } from "@/lib/site";
 import styles from "./Nav.module.css";
 
-/* `#home` resolves to the very top of the document (see lib/lenis.ts), so
-   Home always returns to the true beginning of the portfolio. */
+/* Nav sequence: Home, Categories (dropdown), Shop, About Us, Services,
+   Contact — plain header, no scroll-jacking, no GSAP. The only JS here is
+   the categories dropdown, the mobile drawer, and a lightweight "scrolled"
+   shadow toggle. */
 const LINKS = [
-  { key: "nav.home", href: "#home", watch: null },
-  { key: "nav.about", href: "#about", watch: "about" },
-  { key: "nav.work", href: "#work", watch: "work" },
-  { key: "nav.contact", href: "#contact", watch: "contact" },
+  { key: "nav.home", href: "#home" },
+  { key: "nav.shop", href: "#shop" },
+  { key: "nav.about", href: "#about" },
+  { key: "nav.services", href: "#services" },
+  { key: "nav.gallery", href: "#gallery" },
+  { key: "nav.contact", href: "#contact" },
 ];
+
+function BikeGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="5.5" cy="17.5" r="3.5" />
+        <circle cx="18.5" cy="17.5" r="3.5" />
+        <path d="M5.5 17.5 11 8h4l3.5 9.5" />
+        <path d="M11 8 9 12.5 5.5 17.5" />
+        <path d="M9 12.5h5.5" />
+        <path d="M11 8l1.3-2h2.2" />
+      </g>
+    </svg>
+  );
+}
+
+function TagGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12.5 3.5H6a1 1 0 0 0-1 1v6.5a1 1 0 0 0 .29.71l9 9a1 1 0 0 0 1.42 0l6.5-6.5a1 1 0 0 0 0-1.42l-9-9a1 1 0 0 0-.71-.29z" />
+        <circle cx="9" cy="9" r="1.4" fill="currentColor" stroke="none" />
+      </g>
+    </svg>
+  );
+}
+
+function CartGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 4h2l2.4 12.2a2 2 0 0 0 2 1.6h8a2 2 0 0 0 2-1.6L21 8H6" />
+        <circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none" />
+        <circle cx="17" cy="20" r="1.4" fill="currentColor" stroke="none" />
+      </g>
+    </svg>
+  );
+}
 
 export default function Nav() {
   const ref = useRef<HTMLElement>(null);
   const { t } = useLang();
-  const [active, setActive] = useState<string | null>(null);
-  /* mobile drawer — the desktop pill can't hold four links plus the toggle
-     at phone widths, so below 900px navigation lives behind a menu button
-     rather than being hidden entirely (which is what it was doing) */
+  const { cartCount, setOpen: setCartOpen } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /* close on Escape, and lock the page behind the open drawer */
   useEffect(() => {
     if (!menuOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -38,7 +81,6 @@ export default function Nav() {
     };
   }, [menuOpen]);
 
-  /* never leave the drawer open behind a resize to desktop */
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 901px)");
     const close = () => mq.matches && setMenuOpen(false);
@@ -47,78 +89,92 @@ export default function Nav() {
   }, []);
 
   useEffect(() => {
-    const nav = ref.current;
-    if (!nav) return;
-
-    const ctx = gsap.context(() => {
-      /* The header is PERSISTENT: it never hides. It only condenses slightly
-         once the page has been scrolled, which keeps it feeling part of the
-         page rather than a floating panel. */
-      ScrollTrigger.create({
-        start: "top top-=40",
-        onUpdate: (self) => {
-          nav.classList.toggle(styles.scrolled, self.scroll() > 40);
-        },
-        onLeaveBack: () => nav.classList.remove(styles.scrolled),
-      });
-
-      /* scroll-spy: the nav reflects where you actually are, and falls back
-         to Home whenever you are near the top of the document */
-      const spies = LINKS.filter((l) => l.watch).map((l) =>
-        ScrollTrigger.create({
-          trigger: `#${l.watch}`,
-          start: "top 55%",
-          end: "bottom 45%",
-          onToggle: (self) => {
-            if (self.isActive) setActive(l.watch);
-          },
-        })
-      );
-      const top = ScrollTrigger.create({
-        start: 0,
-        end: () => window.innerHeight * 1.2,
-        onToggle: (self) => {
-          if (self.isActive) setActive(null);
-        },
-      });
-
-      return () => {
-        spies.forEach((s) => s.kill());
-        top.kill();
-      };
-    }, nav);
-
-    return () => ctx.revert();
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const openDropdown = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setCategoryOpen(true);
+  };
+  const scheduleClose = () => {
+    closeTimer.current = setTimeout(() => setCategoryOpen(false), 150);
+  };
+
   return (
-    <header className={styles.wrap} ref={ref}>
-      <div className={styles.cap}>
+    <header className={`${styles.wrap} ${scrolled ? styles.scrolled : ""}`} ref={ref}>
+      {/* ---------- utility strip — real facts only ---------- */}
+      <div className={styles.utility}>
+        <span className={styles.utilityLoc}>
+          Chh. Sambhajinagar · {SHOP.hours}
+        </span>
+        <a className={styles.utilityPhone} href={SHOP.phoneHref}>
+          ☎ {SHOP.phone}
+        </a>
+      </div>
+
+      {/* ---------- main bar ---------- */}
+      <div className={styles.main}>
         <a href="#home" className={styles.logo} aria-label={t("nav.home")}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images/logo-wordmark.png" alt="Cycle Wala" className={styles.logoImg} />
         </a>
 
         <nav className={styles.links} aria-label="Primary">
-          {LINKS.map((l) => {
-            const isOn = l.watch === active;
-            return (
-              <a
-                key={l.key}
-                href={l.href}
-                className={isOn ? styles.on : ""}
-                aria-current={isOn ? "page" : undefined}
-              >
-                <span className={styles.roll}>
-                  <span>{t(l.key)}</span>
-                  <span aria-hidden="true">{t(l.key)}</span>
-                </span>
-              </a>
-            );
-          })}
+          <a href="#home">{t("nav.home")}</a>
+
+          <div className={styles.catWrap} onMouseEnter={openDropdown} onMouseLeave={scheduleClose}>
+            <button
+              type="button"
+              className={styles.catBtn}
+              onClick={() => setCategoryOpen((v) => !v)}
+              aria-expanded={categoryOpen}
+            >
+              {t("nav.categories")} <span className={styles.chev}>{categoryOpen ? "▴" : "▾"}</span>
+            </button>
+            {categoryOpen && (
+              <div className={styles.dropdown}>
+                <p className={styles.dropdownKicker}>{t("nav.browseCategories")}</p>
+                <ul>
+                  {CATEGORY_META.map((c) => (
+                    <li key={c.id}>
+                      <a href="#shop">
+                        <span className={styles.dropdownIcon} aria-hidden="true">
+                          <BikeGlyph />
+                        </span>
+                        <span className={styles.dropdownName}>{c.label}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <a href="#shop" className={styles.dropdownAll}>
+                  <span className={styles.dropdownAllIcon} aria-hidden="true">
+                    <TagGlyph />
+                  </span>
+                  {t("nav.viewAllCategories")}
+                  <span aria-hidden="true">›</span>
+                </a>
+              </div>
+            )}
+          </div>
+
+          <a href="#shop">{t("nav.shop")}</a>
+          <a href="#about">{t("nav.about")}</a>
+          <a href="#services">{t("nav.services")}</a>
+          <a href="#gallery">{t("nav.gallery")}</a>
+          <a href="#contact">{t("nav.contact")}</a>
         </nav>
 
         <div className={styles.right}>
+          <button type="button" className={styles.cartBtn} aria-label="Your list" onClick={() => setCartOpen(true)}>
+            <CartGlyph />
+            {cartCount > 0 && <span className={styles.cartBadge}>{cartCount}</span>}
+          </button>
+          <a className={styles.callBtn} href={SHOP.phoneHref}>
+            {t("nav.call")}
+          </a>
           <button
             type="button"
             className={`${styles.burger} ${menuOpen ? styles.burgerOpen : ""}`}
@@ -134,21 +190,17 @@ export default function Nav() {
       </div>
 
       {/* ---------- mobile drawer ---------- */}
-      <div
-        className={`${styles.sheet} ${menuOpen ? styles.sheetOpen : ""}`}
-        id="mobile-nav"
-        hidden={!menuOpen}
-      >
+      <div className={`${styles.sheet} ${menuOpen ? styles.sheetOpen : ""}`} id="mobile-nav" hidden={!menuOpen}>
         <nav aria-label="Primary mobile">
           {LINKS.map((l) => (
-            <a
-              key={l.key}
-              href={l.href}
-              className={l.watch === active ? styles.sheetOn : ""}
-              aria-current={l.watch === active ? "page" : undefined}
-              onClick={() => setMenuOpen(false)}
-            >
+            <a key={l.key} href={l.href} onClick={() => setMenuOpen(false)}>
               {t(l.key)}
+            </a>
+          ))}
+          <p className={styles.sheetKicker}>{t("nav.categories")}</p>
+          {CATEGORY_META.map((c) => (
+            <a key={c.id} href="#shop" onClick={() => setMenuOpen(false)} className={styles.sheetCat}>
+              {c.label}
             </a>
           ))}
         </nav>

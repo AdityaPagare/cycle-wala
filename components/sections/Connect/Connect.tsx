@@ -1,32 +1,12 @@
 "use client";
 
-/*
- * LET'S CONNECT — the closing chapter (Patta "Let's connect" as the mood
- * reference: curved panel row, floating perspective, calm typography).
- * Our take: five memory panels on a shallow 3D arc that lean with the
- * cursor and breathe on idle; the site-wide Button carries the CTA; social
- * cards use the same circle-fill + roll language as the nav.
- */
-
-import { useEffect, useRef, type ReactNode } from "react";
-import { gsap, EASE, prefersReducedMotion } from "@/lib/gsap";
+import type { ReactNode } from "react";
 import Button from "@/components/ui/Button";
 import styles from "./Connect.module.css";
 import { useLang } from "@/lib/i18n";
 import { SHOP } from "@/lib/site";
 
-/* Placeholder shop photos — replace with real store/workshop photography. */
-const PANELS = [
-  { src: "/images/placeholder-1.svg", focus: "center", rotate: 26, z: -110, y: -26 },
-  { src: "/images/placeholder-2.svg", focus: "center", rotate: 13, z: -40, y: -8 },
-  { src: "/images/placeholder-3.svg", focus: "center", rotate: 0, z: 0, y: 0 },
-  { src: "/images/placeholder-1.svg", focus: "center", rotate: -13, z: -40, y: -8 },
-  { src: "/images/placeholder-2.svg", focus: "center", rotate: -26, z: -110, y: -26 },
-];
-
-/* Official brand marks, inlined so they inherit size and need no requests.
-   Paths are the brands' own glyphs (Instagram camera outline, Facebook "f") —
-   not generic lookalikes. */
+/* Official brand marks, inlined so they inherit size and need no requests. */
 const MARKS: Record<string, ReactNode> = {
   instagram: (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -40,7 +20,7 @@ const MARKS: Record<string, ReactNode> = {
   ),
 };
 
-/* Placeholder contact details — replace with the shop's real profiles/number. */
+/* Placeholder contact details — replace with the shop's real profiles once confirmed. */
 const SOCIALS = [
   { name: "Instagram", mark: "instagram", href: "[PENDING — add real Instagram URL]" },
   { name: "Facebook", mark: "facebook", href: "[PENDING — add real Facebook URL]" },
@@ -49,100 +29,18 @@ const SOCIALS = [
 ] as const;
 
 export default function Connect() {
-  const root = useRef<HTMLElement>(null);
   const { t } = useLang();
 
-  useEffect(() => {
-    const el = root.current;
-    if (!el || prefersReducedMotion()) return;
-
-    const ctx = gsap.context(() => {
-      /* reveal */
-      gsap.from(`.${styles.head} > *`, {
-        y: 36,
-        autoAlpha: 0,
-        duration: 0.9,
-        ease: EASE.outExpo,
-        stagger: 0.09,
-        immediateRender: false,
-        scrollTrigger: { trigger: el, start: "top 70%" },
-      });
-      gsap.from(`.${styles.panel}`, {
-        y: 90,
-        autoAlpha: 0,
-        duration: 1.1,
-        ease: EASE.outExpo,
-        stagger: { each: 0.08, from: "center" },
-        immediateRender: false,
-        scrollTrigger: { trigger: `.${styles.arc}`, start: "top 82%" },
-      });
-      gsap.from(`.${styles.socials} > *`, {
-        y: 26,
-        autoAlpha: 0,
-        duration: 0.8,
-        ease: EASE.outExpo,
-        stagger: 0.07,
-        immediateRender: false,
-        scrollTrigger: { trigger: `.${styles.socials}`, start: "top 88%" },
-      });
-
-      /* idle float — each panel bobs on its own rhythm */
-      gsap.utils.toArray<HTMLElement>(`.${styles.panelInner}`).forEach((p, i) => {
-        gsap.to(p, {
-          y: `+=${6 + (i % 3) * 3}`,
-          duration: 3 + (i % 3) * 0.7,
-          yoyo: true,
-          repeat: -1,
-          ease: "sine.inOut",
-          delay: i * 0.4,
-        });
-      });
-
-      /* cursor: the whole arc leans, each panel adds its own micro-tilt */
-      const panels = gsap.utils.toArray<HTMLElement>(`.${styles.panel}`);
-      const setters = panels.map((p, i) => ({
-        rx: gsap.quickTo(p, "rotationX", { duration: 0.9, ease: "power3.out" }),
-        add: gsap.quickTo(p, "rotationY", { duration: 0.9, ease: "power3.out" }),
-        base: PANELS[i].rotate,
-      }));
-      const onMove = (e: PointerEvent) => {
-        const r = el.getBoundingClientRect();
-        const cx = ((e.clientX - r.left) / r.width - 0.5) * 2;
-        const cy = ((e.clientY - r.top) / r.height - 0.5) * 2;
-        setters.forEach((s) => {
-          s.add(s.base + cx * 5);
-          s.rx(-cy * 4);
-        });
-      };
-      const onLeave = () => setters.forEach((s) => {
-        s.add(s.base);
-        s.rx(0);
-      });
-      el.addEventListener("pointermove", onMove);
-      el.addEventListener("pointerleave", onLeave);
-
-      return () => {
-        el.removeEventListener("pointermove", onMove);
-        el.removeEventListener("pointerleave", onLeave);
-      };
-    }, el);
-
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <section className={styles.connect} id="contact" ref={root}>
+    <section className={styles.connect} id="contact">
       <div className={styles.head}>
         <p className={styles.eyebrow}>
-          <span>08</span> {t("connect.eyebrow")}
+          <span>04</span> {t("connect.eyebrow")}
         </p>
         <h2 className={styles.h2}>
-          {t("connect.h2a")}{" "}
-          <em className={styles.serif}>{t("connect.h2Em")}</em>
+          {t("connect.h2a")} <em className={styles.serif}>{t("connect.h2Em")}</em>
         </h2>
-        <p className={styles.lede}>
-          {t("connect.lede")}
-        </p>
+        <p className={styles.lede}>{t("connect.lede")}</p>
         <p className={styles.address}>
           {SHOP.address}
           <br />
@@ -151,37 +49,10 @@ export default function Connect() {
           {SHOP.hours}
         </p>
         <div className={styles.cta}>
-          <Button href={`mailto:${SHOP.email}`} variant="primary" arrow>
+          <Button href={SHOP.phoneHref} variant="primary" arrow magnetic={false}>
             {t("connect.cta")}
           </Button>
         </div>
-      </div>
-
-      {/* curved memory arc */}
-      <div className={styles.arc} aria-hidden="true">
-        {PANELS.map((p, i) => (
-          <div
-            className={styles.panel}
-            key={`${p.src}-${i}`}
-            style={
-              {
-                transform: `translate3d(0, ${p.y}px, ${p.z}px) rotateY(${p.rotate}deg)`,
-              } as React.CSSProperties
-            }
-          >
-            <div className={`${styles.panelInner} ${styles.hasPhoto}`}>
-              <img
-                className={styles.photo}
-                src={p.src}
-                alt=""
-                style={{ objectPosition: p.focus }}
-                loading="lazy"
-                decoding="async"
-                aria-hidden="true"
-              />
-            </div>
-          </div>
-        ))}
       </div>
 
       {/* social cards */}
@@ -194,26 +65,53 @@ export default function Connect() {
             target={s.href.startsWith("http") ? "_blank" : undefined}
             rel={s.href.startsWith("http") ? "noreferrer" : undefined}
           >
-            <span className={styles.glyph}>
-              {"mark" in s ? MARKS[s.mark] : s.glyph}
-            </span>
-            <span className={styles.roll}>
-              <span>{s.name}</span>
-              <span aria-hidden="true">{s.name}</span>
-            </span>
-            <span className={styles.arrow}>↗</span>
+            <span className={styles.glyph}>{"mark" in s ? MARKS[s.mark] : s.glyph}</span>
+            <span>{s.name}</span>
           </a>
         ))}
       </div>
 
       <footer className={styles.footer}>
-        <span>
-          {t("connect.credit")} <b>{SHOP.name}</b>
-        </span>
-        <a href="#home" className={styles.top}>
-          {t("connect.top")}
-        </a>
-        <span>© 2026 {SHOP.name}</span>
+        <div className={styles.footGrid}>
+          <div className={styles.footCol}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo-wordmark.png" alt={SHOP.name} className={styles.footLogo} />
+            <p>{SHOP.description}</p>
+          </div>
+
+          <div className={styles.footCol}>
+            <h5>{t("connect.navHeading")}</h5>
+            <a href="#home">{t("nav.home")}</a>
+            <a href="#about">{t("nav.about")}</a>
+            <a href="#shop">{t("nav.shop")}</a>
+            <a href="#services">{t("nav.services")}</a>
+            <a href="#gallery">{t("nav.gallery")}</a>
+          </div>
+
+          <div className={styles.footCol}>
+            <h5>{t("connect.categoriesHeading")}</h5>
+            <a href="#shop">Kids' Cycles</a>
+            <a href="#shop">Mountain Cycles</a>
+            <a href="#shop">City & Hybrid</a>
+          </div>
+
+          <div className={styles.footCol}>
+            <h5>{t("connect.contactHeading")}</h5>
+            <p>{SHOP.address}</p>
+            <a href={SHOP.phoneHref}>{SHOP.phone}</a>
+            <p>{SHOP.hours}</p>
+          </div>
+        </div>
+
+        <div className={styles.footBottom}>
+          <span>
+            {t("connect.credit")} <b>{SHOP.name}</b>
+          </span>
+          <a href="#home" className={styles.top}>
+            {t("connect.top")}
+          </a>
+          <span>© 2026 {SHOP.name}</span>
+        </div>
       </footer>
     </section>
   );

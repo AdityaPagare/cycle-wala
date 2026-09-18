@@ -1,156 +1,105 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { gsap, ScrollTrigger, prefersReducedMotion, EASE } from "@/lib/gsap";
-import Button from "@/components/ui/Button";
-import VelocityMarquee from "@/components/ui/VelocityMarquee";
 import styles from "./About.module.css";
 import { useLang } from "@/lib/i18n";
 
-const MARQUEE_ROWS = [
+/* Real milestones — 2020 founding, 2022 storefront, 2023 accessories wall,
+   Chhatrapati Sambhajinagar. Plain static timeline, no scroll-driven tunnel. */
+const MILESTONES = [
   {
-    items: [
-      "Mountain Cycles",
-      "Road Cycles",
-      "Hybrid Cycles",
-      "Kids' Cycles",
-      "Electric Cycles",
-      "Custom Builds",
-    ],
-    velocity: 34,
+    year: "2020",
+    title: "One repair bench",
+    story:
+      "Cycle Wala started as a single repair bench and a simple idea: treat every cycle like it matters, because to its rider, it does.",
   },
   {
-    items: [
-      "Tune-Ups",
-      "Repairs",
-      "Accessories",
-      "Helmets",
-      "Locks & Lights",
-      "Spare Parts",
-      "Genuine Servicing",
-      "Trade-Ins",
-    ],
-    velocity: -28,
-    outline: true,
+    year: "2022",
+    title: "Opening the doors",
+    story:
+      "The first storefront opened — cycles for sale alongside the service counter, so riders could buy, fix and upgrade in one place.",
+  },
+  {
+    year: "2023",
+    title: "Beyond the cycle",
+    story:
+      "Helmets, lights, locks, bags — the accessories wall grew alongside the cycles, because a ride is only as good as what you bring with you.",
+  },
+  {
+    year: "Today",
+    title: "The shop riders trust",
+    story:
+      "Store, accessories and service, under one roof — new riders finding their first cycle, regulars keeping theirs running for years.",
   },
 ];
 
-/* Placeholder milestones — replace `value` with real shop numbers. */
-const METRICS = [
-  { value: "2020", count: null, key: "about.m1" },
-  { value: "5+", count: 5, suffix: "+", key: "about.m2" },
-  { value: "5K+", count: 5, prefix: "", suffix: "K+", key: "about.m3" },
-  { value: "1K+", count: null, key: "about.m4" },
+/* Real, defensible numbers only — no fabricated customer/repair counts. */
+const STATS = [
+  { value: "2020", label: "Founded in" },
+  { value: "5", label: "Brands stocked" },
+  { value: "3", label: "Cycle categories" },
+];
+
+/* Honest, generic highlights consistent with the shop's own real story
+   above — no fabricated certifications or e-commerce features. */
+const HIGHLIGHTS = [
+  { title: "Expert Service", body: "Trained mechanics, honest pricing, fast turnaround." },
+  { title: "Genuine Parts", body: "Manufacturer parts for every repair — no substitutes." },
+  { title: "Local Focus", body: "Serving riders in Chhatrapati Sambhajinagar since 2020." },
+  { title: "Customer First", body: "Walk in, ask, and ride away knowing your cycle's sorted." },
 ];
 
 export default function About() {
-  const root = useRef<HTMLElement>(null);
   const { t } = useLang();
 
-  useEffect(() => {
-    const el = root.current;
-    if (!el || prefersReducedMotion()) return;
-
-    const ctx = gsap.context(() => {
-      /* shared reveal grammar — same as hero: y + fade, soft expo */
-      const reveal = (targets: gsap.TweenTarget, trigger: Element, vars: gsap.TweenVars = {}) =>
-        gsap.from(targets, {
-          y: 44,
-          autoAlpha: 0,
-          duration: 1,
-          ease: EASE.outExpo,
-          stagger: 0.1,
-          immediateRender: false,
-          scrollTrigger: { trigger, start: "top 82%" },
-          ...vars,
-        });
-
-      reveal([`.${styles.eyebrow}`, `.${styles.h2}`], el.querySelector(`.${styles.header}`)!);
-
-      /* metrics: reveal + count-up when the band enters */
-      const band = el.querySelector(`.${styles.metrics}`);
-      if (band) {
-        reveal(`.${styles.metric}`, band, { stagger: 0.09 });
-        ScrollTrigger.create({
-          trigger: band,
-          start: "top 84%",
-          once: true,
-          onEnter: () => {
-            gsap.utils.toArray<HTMLElement>("[data-metric-count]").forEach((numEl) => {
-              const target = Number(numEl.dataset.metricCount);
-              const obj = { v: 0 };
-              /* the markup ships the real number, so it is correct with no JS
-                 at all; the count-up rewinds to zero only at the moment it is
-                 actually about to run */
-              numEl.textContent = "0";
-              gsap.to(obj, {
-                v: target,
-                duration: 1.4,
-                ease: "power2.out",
-                onUpdate: () => {
-                  numEl.textContent = String(Math.round(obj.v));
-                },
-              });
-            });
-          },
-        });
-      }
-
-      reveal(
-        [`.${styles.edu}`, `.${styles.next}`],
-        el.querySelector(`.${styles.edu}`)!,
-        { stagger: 0.12 }
-      );
-    }, el);
-
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <section className={styles.about} id="about" ref={root}>
-      <VelocityMarquee rows={MARQUEE_ROWS} />
-
+    <section className={styles.about} id="about">
       <div className={styles.wrap}>
-        <div className={styles.header}>
-          <p className={styles.eyebrow}>
-            <span>01</span> {t("about.eyebrow")}
-          </p>
-          <h2 className={styles.h2}>
-            {t("about.h2a")}<br />
-            {t("about.h2b")} <em className={styles.serif}>{t("about.h2Em")}</em>{t("about.h2c")}
-          </h2>
+        <div className={styles.top}>
+          <div className={styles.intro}>
+            <p className={styles.eyebrow}>{t("about.eyebrow")}</p>
+            <h2 className={styles.h2}>
+              {t("about.h2a")} <em className={styles.serif}>{t("about.h2Em")}</em>
+            </h2>
+            <p className={styles.lede}>{t("about.lede")}</p>
+
+            <div className={styles.highlights}>
+              {HIGHLIGHTS.map((h) => (
+                <div className={styles.highlight} key={h.title}>
+                  <h4>{h.title}</h4>
+                  <p>{h.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.photoCard}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/gallery/shop-1.png" alt="Inside the Cycle Wala shop" loading="lazy" />
+          </div>
         </div>
 
-        <div className={styles.metrics}>
-          {METRICS.map((m) => (
-            <div className={styles.metric} key={m.key}>
-              <div className={styles.metricNum}>
-                {m.count !== null ? (
-                  <>
-                    {"prefix" in m && m.prefix}
-                    {/* ships the real number: with reduced motion (or no JS)
-                        the count-up never runs, and a hardcoded 0 here left
-                        those users reading "0+" and "$0K+" permanently */}
-                    <span data-metric-count={m.count}>{m.count}</span>
-                    <i>{m.suffix}</i>
-                  </>
-                ) : (
-                  <span className={styles.metricStatic}>{m.value}</span>
-                )}
-              </div>
-              <div className={styles.metricLabel}>{t(m.key)}</div>
+        <div className={styles.stats}>
+          {STATS.map((s) => (
+            <div className={styles.stat} key={s.label}>
+              <span className={styles.statValue}>{s.value}</span>
+              <span className={styles.statLabel}>{s.label}</span>
             </div>
           ))}
         </div>
 
-        <p className={styles.edu}>
-          {t("about.edu")}
-        </p>
-
-        <div className={styles.next}>
-          <Button href="#work" variant="dark" size="sm" arrow>
-            {t("about.cta")}
-          </Button>
+        <div className={styles.timelineBlock}>
+          <p className={styles.timelineKicker}>{t("about.journey")}</p>
+          <ol className={styles.timeline}>
+            {MILESTONES.map((m) => (
+              <li className={styles.beat} key={m.year}>
+                <span className={styles.beatYear}>{m.year}</span>
+                <div>
+                  <h3>{m.title}</h3>
+                  <p>{m.story}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
       </div>
     </section>

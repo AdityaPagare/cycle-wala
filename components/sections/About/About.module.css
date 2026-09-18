@@ -1,4 +1,4 @@
-/* ============ ABOUT — storytelling section ============ */
+/* ============ ABOUT — intro + highlights + photo, stats, timeline ============ */
 
 .about {
   position: relative;
@@ -8,37 +8,35 @@
 .wrap {
   max-width: var(--max);
   margin: 0 auto;
-  padding: 120px 44px 130px;
+  padding: 96px 44px 100px;
 }
 
-/* ---------- header ---------- */
-.eyebrow {
-  display: flex;
+/* ---------- top: intro + photo ---------- */
+.top {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 56px;
   align-items: center;
-  gap: 14px;
+}
+
+.eyebrow {
+  display: inline-flex;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ink-3);
-  margin-bottom: 26px;
-}
-.eyebrow span {
-  color: var(--accent);
-  letter-spacing: 0.05em;
-}
-.eyebrow::after {
-  content: "";
-  flex: 0 0 34px;
-  height: 1px;
-  background: var(--accent);
+  color: var(--accent-dark);
+  background: rgba(76, 175, 46, 0.1);
+  padding: 6px 14px;
+  border-radius: 999px;
 }
 
 .h2 {
+  margin-top: 18px;
   font-weight: 900;
-  font-size: clamp(36px, 4.6vw, 62px);
+  font-size: clamp(32px, 3.8vw, 48px);
   letter-spacing: -0.03em;
-  line-height: 1.02;
+  line-height: 1.1;
 }
 .serif {
   font-family: var(--font-serif), Georgia, serif;
@@ -47,170 +45,151 @@
   color: var(--accent);
 }
 
-/* ---------- grid: beats + side cards ---------- */
-.grid {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 72px;
-  margin-top: 64px;
-}
-
-.beats {
-  display: flex;
-  flex-direction: column;
-  gap: 44px;
-}
-.beat {
-  display: flex;
-  gap: 22px;
-}
-.beatN {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--accent);
-  padding-top: 7px;
-  min-width: 26px;
-}
-.beat h3 {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin-bottom: 10px;
-}
-.beat p {
-  font-size: 19px;
-  line-height: 1.6;
-  color: var(--ink);
+.lede {
+  margin-top: 16px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--ink-2);
   max-width: 560px;
 }
-.beat p b {
-  font-weight: 700;
+
+.highlights {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+.highlight {
+  background: var(--ph);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+.highlight h4 {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.highlight p {
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
 }
 
-.sideCol {
+.photoCard {
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  aspect-ratio: 4 / 5;
+}
+.photoCard img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---------- stats strip ---------- */
+.stats {
+  display: flex;
+  gap: 48px;
+  margin-top: 64px;
+  padding: 32px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.statValue {
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+.statLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+/* ---------- timeline ---------- */
+.timelineBlock {
+  margin-top: 64px;
+}
+.timelineKicker {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 30px;
+}
+.timeline {
+  list-style: none;
   display: flex;
   flex-direction: column;
   gap: 30px;
 }
-.sideCard {
-  background: #fff;
-  border-radius: var(--radius);
-  border: 1px solid rgba(20, 20, 20, 0.04);
-  box-shadow: var(--shadow);
-  will-change: transform;
-}
-.imgCard {
-  height: 300px;
+.beat {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--ph);
-  color: var(--ink-3);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  transform: rotate(2deg);
+  gap: 26px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid var(--line);
 }
-.philoCard {
-  padding: 32px 34px;
-  transform: rotate(-1.5deg);
+.beat:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
-.philoCard h4 {
-  font-family: var(--font-script), cursive;
-  font-size: 25px;
-  font-weight: 700;
-  color: var(--ink-2);
-  margin-bottom: 12px;
-}
-.philoCard ul {
-  list-style: none;
-}
-.philoCard li {
-  display: flex;
-  gap: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  padding: 11px 0;
-  border-bottom: 1px solid #f3f3f4;
-}
-.philoCard li:last-child {
-  border: none;
-}
-.philoCard li span {
+.beatYear {
+  flex: 0 0 92px;
+  font-size: 14px;
+  font-weight: 800;
   color: var(--accent);
+  padding-top: 3px;
 }
-
-/* ---------- metrics band ---------- */
-.metrics {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 28px;
-  margin-top: 84px;
+.beat h3 {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
 }
-.metric {
-  border-top: 2px solid var(--ink);
-  padding-top: 20px;
-}
-.metricNum {
-  display: flex;
-  align-items: baseline;
-  font-size: clamp(34px, 3.6vw, 50px);
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-.metricNum i {
-  font-style: normal;
-  color: var(--accent);
-}
-.metricStatic {
-  font-weight: 900;
-}
-.metricLabel {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-3);
-  margin-top: 10px;
-  line-height: 1.45;
-  max-width: 220px;
-}
-
-/* ---------- education + next ---------- */
-.edu {
-  margin-top: 56px;
-  font-size: 14.5px;
+.beat p {
+  font-size: 15px;
+  line-height: 1.65;
   color: var(--ink-2);
-}
-.edu b {
-  color: var(--ink);
-}
-.next {
-  margin-top: 34px;
+  max-width: 620px;
 }
 
 /* ============ Responsive ============ */
 @media (max-width: 1100px) {
   .wrap {
-    padding: 90px 24px 100px;
+    padding: 80px 24px 90px;
   }
-  .grid {
+  .top {
     grid-template-columns: 1fr;
-    gap: 48px;
+    gap: 32px;
   }
-  .metrics {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 34px 24px;
-    margin-top: 64px;
+  .photoCard {
+    order: -1;
+    aspect-ratio: 16 / 9;
   }
 }
 
 @media (max-width: 560px) {
-  .beat p {
-    font-size: 17px;
+  .highlights {
+    grid-template-columns: 1fr;
   }
-  .metrics {
-    grid-template-columns: 1fr 1fr;
+  .stats {
+    gap: 28px;
+    flex-wrap: wrap;
+  }
+  .beat {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .beatYear {
+    flex: none;
   }
 }

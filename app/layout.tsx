@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Instrument_Serif, Caveat, Baloo_2 } from "next/font/google";
 import SmoothScroll from "@/components/layout/SmoothScroll";
+import CartDrawer from "@/components/cart/CartDrawer";
 import { LanguageProvider } from "@/lib/i18n";
+import { CartProvider } from "@/lib/cart";
 import { SITE_URL, SHOP } from "@/lib/site";
 import "./globals.css";
 
@@ -76,7 +78,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body>
         <LanguageProvider>
-          <SmoothScroll>{children}</SmoothScroll>
+          <CartProvider>
+            <SmoothScroll>{children}</SmoothScroll>
+            <CartDrawer />
+          </CartProvider>
         </LanguageProvider>
         <script
           type="application/ld+json"

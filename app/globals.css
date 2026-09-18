@@ -32,7 +32,7 @@ html {
    anchor jumps, scrollIntoView and reduced-motion; lib/lenis.ts applies the
    same offset to the smooth-scrolled path */
 :root {
-  --nav-offset: 104px;
+  --nav-offset: 96px;
 }
 section[id],
 [id] {
