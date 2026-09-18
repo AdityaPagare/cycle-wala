@@ -1,6 +1,5 @@
-/* Admin auth — email + password, checked against server-only env vars
- * (ADMIN_EMAIL / ADMIN_PASSWORD). Fails CLOSED: if either isn't set on the
- * server, every request is rejected rather than silently authorized.
+/* Admin auth — email + password, checked against hardcoded credentials.
+ * Fails CLOSED: if credentials don't match, every request is rejected.
  *
  * The credential travels as `Bearer base64(email:password)` — the same
  * header the rest of the admin API already expected, so only what's
@@ -8,6 +7,10 @@
  * echoed back by any API response.
  */
 import type { NextRequest } from "next/server";
+
+// Hardcoded admin credentials
+const ADMIN_EMAIL = "gauravtote@cyclewala.com";
+const ADMIN_PASSWORD = "12345";
 
 function decodeCredential(token: string): { email: string; password: string } | null {
   try {
@@ -21,9 +24,8 @@ function decodeCredential(token: string): { email: string; password: string } | 
 }
 
 export function isAuthorized(request: NextRequest): boolean {
-  const configuredEmail = process.env.ADMIN_EMAIL;
-  const configuredPassword = process.env.ADMIN_PASSWORD;
-  if (!configuredEmail || !configuredPassword) return false;
+  // Check if hardcoded credentials are available
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) return false;
 
   const header = request.headers.get("authorization");
   const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
@@ -32,5 +34,5 @@ export function isAuthorized(request: NextRequest): boolean {
   const creds = decodeCredential(token);
   if (!creds) return false;
 
-  return creds.email === configuredEmail && creds.password === configuredPassword;
+  return creds.email === ADMIN_EMAIL && creds.password === ADMIN_PASSWORD;
 }
