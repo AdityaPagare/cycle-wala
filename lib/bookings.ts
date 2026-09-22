@@ -1,10 +1,9 @@
-/* Service bookings — same JSON-file pattern as lib/orders.ts. A booking is a
- * request: the shop calls to confirm a time. No payment is taken online. */
-import path from "path";
+/* Service bookings — same pattern as lib/orders.ts. A booking is a request:
+ * the shop calls to confirm a time. No payment is taken online. */
 import type { OrderStatus } from "@/lib/orders";
-import { DATA_DIR, newId, readJson, writeJsonAtomic } from "@/lib/storage";
+import { newId, readCollection, writeCollection } from "@/lib/storage";
 
-const DATA_FILE = path.join(DATA_DIR, "bookings.json");
+const COLLECTION = "bookings";
 
 export type Booking = {
   id: string;
@@ -22,15 +21,16 @@ export type Booking = {
   updatedAt: string;
 };
 
-const readAll = () => readJson<Booking[]>(DATA_FILE, []);
-const writeAll = (bookings: Booking[]) => writeJsonAtomic(DATA_FILE, bookings);
+const readAll = () => readCollection<Booking[]>(COLLECTION, []);
+const writeAll = (bookings: Booking[]) => writeCollection(COLLECTION, bookings);
 
-export function getBookings(): Booking[] {
-  return readAll().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+export async function getBookings(): Promise<Booking[]> {
+  const bookings = await readAll();
+  return bookings.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-export function createBooking(input: Pick<Booking, "service" | "customer">): Booking {
-  const bookings = readAll();
+export async function createBooking(input: Pick<Booking, "service" | "customer">): Promise<Booking> {
+  const bookings = await readAll();
   const now = new Date().toISOString();
   const booking: Booking = {
     id: newId("SV"),
@@ -41,15 +41,15 @@ export function createBooking(input: Pick<Booking, "service" | "customer">): Boo
     updatedAt: now,
   };
   bookings.push(booking);
-  writeAll(bookings);
+  await writeAll(bookings);
   return booking;
 }
 
-export function updateBookingStatus(id: string, status: OrderStatus): Booking | null {
-  const bookings = readAll();
+export async function updateBookingStatus(id: string, status: OrderStatus): Promise<Booking | null> {
+  const bookings = await readAll();
   const i = bookings.findIndex((b) => b.id === id);
   if (i === -1) return null;
   bookings[i] = { ...bookings[i], status, updatedAt: new Date().toISOString() };
-  writeAll(bookings);
+  await writeAll(bookings);
   return bookings[i];
 }

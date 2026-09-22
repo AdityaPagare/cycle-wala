@@ -14,7 +14,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (!VALID.includes(body.status)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
-  const booking = updateBookingStatus(id, body.status);
+  const booking = await updateBookingStatus(id, body.status);
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   return NextResponse.json(booking);
 }

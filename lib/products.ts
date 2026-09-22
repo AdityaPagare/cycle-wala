@@ -1,24 +1,19 @@
-/* Product type + JSON-file persistence for the admin-managed catalogue.
+/* Product type + persistence for the admin-managed catalogue.
  *
- * `data/products.json` is the live source of truth for the public Shop page
- * AND the admin dashboard — editing a product in /admin shows up on the
- * site immediately. It's seeded once (on first read) from the real,
- * verified starting catalogue in `data/products-seed.ts` (transcribed from
- * the shop's own supplier PDFs).
+ * The "products" collection is the live source of truth for the public Shop
+ * page AND the admin dashboard — editing a product in /admin shows up on the
+ * site immediately. It's seeded once (on first read) from the real, verified
+ * starting catalogue in `data/products-seed.ts` (transcribed from the shop's
+ * own supplier PDFs).
  *
- * This is a plain JSON file via `fs`, not a database — fine for a single
- * small shop on a persistent Node host (e.g. a VPS, Railway, Render). It
- * will NOT persist across deploys on a platform with an ephemeral/read-only
- * filesystem (e.g. Vercel's default serverless functions) — ask if the
- * site ends up hosted somewhere like that and this needs to move to a real
- * database instead.
+ * Storage itself (a local JSON file, or Netlify Blobs when deployed there)
+ * is handled by lib/storage.ts — this file doesn't know or care which one is
+ * active.
  */
-import fs from "fs";
-import path from "path";
 import { SEED_PRODUCTS } from "@/data/products-seed";
-import { DATA_DIR, readJson, writeJsonAtomic } from "@/lib/storage";
+import { readCollection, writeCollection } from "@/lib/storage";
 
-const DATA_FILE = path.join(DATA_DIR, "products.json");
+const COLLECTION = "products";
 
 export type ProductCategory = "kids" | "mtb" | "hybrid";
 
@@ -38,72 +33,52 @@ export type Product = {
   updatedAt: string;
 };
 
-/* the catalogue that ships with the code — used to carry the current prices
-   over the first time the site runs with DATA_DIR pointing elsewhere */
-const SHIPPED_FILE = path.join(process.cwd(), "data", "products.json");
+export async function getProducts(): Promise<Product[]> {
+  const existing = await readCollection<Product[] | null>(COLLECTION, null);
+  if (existing) return existing;
 
-function initializeDb() {
-  if (!fs.existsSync(DATA_FILE)) {
-    if (DATA_FILE !== SHIPPED_FILE && fs.existsSync(SHIPPED_FILE)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-      fs.copyFileSync(SHIPPED_FILE, DATA_FILE);
-      return;
-    }
-    const now = new Date().toISOString();
-    const seeded: Product[] = SEED_PRODUCTS.map((p) => ({
-      ...p,
-      createdAt: now,
-      updatedAt: now,
-    }));
-    writeJsonAtomic(DATA_FILE, seeded);
-  }
+  // first run: seed once from the shop's real, verified starting catalogue
+  const now = new Date().toISOString();
+  const seeded: Product[] = SEED_PRODUCTS.map((p) => ({ ...p, createdAt: now, updatedAt: now }));
+  await writeCollection(COLLECTION, seeded);
+  return seeded;
 }
 
-export function getProducts(): Product[] {
-  initializeDb();
-  return readJson<Product[]>(DATA_FILE, []);
+export async function getProductBySlug(slug: string): Promise<Product | undefined> {
+  const products = await getProducts();
+  return products.find((p) => p.slug === slug);
 }
 
-export function getProductBySlug(slug: string): Product | undefined {
-  return getProducts().find((p) => p.slug === slug);
-}
-
-export function createProduct(
-  input: Omit<Product, "createdAt" | "updatedAt">
-): Product {
-  const products = getProducts();
+export async function createProduct(input: Omit<Product, "createdAt" | "updatedAt">): Promise<Product> {
+  const products = await getProducts();
   if (products.some((p) => p.slug === input.slug)) {
     throw new Error(`A product with slug "${input.slug}" already exists`);
   }
   const now = new Date().toISOString();
   const product: Product = { ...input, createdAt: now, updatedAt: now };
   products.push(product);
-  writeJsonAtomic(DATA_FILE, products);
+  await writeCollection(COLLECTION, products);
   return product;
 }
 
-export function updateProduct(
+export async function updateProduct(
   slug: string,
   updates: Partial<Omit<Product, "slug" | "createdAt">>
-): Product | null {
-  const products = getProducts();
+): Promise<Product | null> {
+  const products = await getProducts();
   const index = products.findIndex((p) => p.slug === slug);
   if (index === -1) return null;
-  const updated: Product = {
-    ...products[index],
-    ...updates,
-    updatedAt: new Date().toISOString(),
-  };
+  const updated: Product = { ...products[index], ...updates, updatedAt: new Date().toISOString() };
   products[index] = updated;
-  writeJsonAtomic(DATA_FILE, products);
+  await writeCollection(COLLECTION, products);
   return updated;
 }
 
-export function deleteProduct(slug: string): boolean {
-  const products = getProducts();
+export async function deleteProduct(slug: string): Promise<boolean> {
+  const products = await getProducts();
   const filtered = products.filter((p) => p.slug !== slug);
   if (filtered.length === products.length) return false;
-  writeJsonAtomic(DATA_FILE, filtered);
+  await writeCollection(COLLECTION, filtered);
   return true;
 }
 

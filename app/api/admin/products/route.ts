@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  return NextResponse.json(getProducts());
+  return NextResponse.json(await getProducts());
 }
 
 export async function POST(request: NextRequest) {
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
     const f = parsed.value;
 
-    const product = createProduct({
+    const product = await createProduct({
       slug: f.slug!,
       brand: f.brand!,
       model: f.model!,

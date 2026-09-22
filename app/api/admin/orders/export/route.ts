@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const orders = getOrders();
+  const orders = await getOrders();
   const wb = new ExcelJS.Workbook();
   wb.creator = "Cycle Wala";
 

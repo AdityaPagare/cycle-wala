@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthorized } from "@/lib/admin-auth";
-import { UPLOAD_DIR } from "@/lib/storage";
-import fs from "fs";
-import path from "path";
+import { writeUpload } from "@/lib/storage";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -15,10 +13,13 @@ function sniff(b: Buffer): "jpg" | "png" | "webp" | null {
   return null;
 }
 
-/* Admin photo upload — saves into DATA_DIR/uploads/ (served back at
-   /uploads/<file>, see app/uploads/[file]/route.ts) and returns the path to
-   store on the product. The filename comes from the product slug, never from
-   the uploaded file's own name. */
+const EXT_TYPE = { jpg: "image/jpeg", png: "image/png", webp: "image/webp" } as const;
+
+/* Admin photo upload — saves via lib/storage.ts (a local file, or Netlify
+   Blobs when deployed there) and returns the path to store on the product.
+   Served back at /uploads/<file>, see app/uploads/[file]/route.ts. The
+   filename comes from the product slug, never from the uploaded file's own
+   name. */
 export async function POST(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -44,9 +45,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Only JPEG, PNG or WEBP images are allowed" }, { status: 400 });
   }
 
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
   const filename = `${slug}-${Date.now()}.${ext}`;
-  fs.writeFileSync(path.join(UPLOAD_DIR, filename), bytes);
+  await writeUpload(filename, bytes, EXT_TYPE[ext]);
 
   return NextResponse.json({ path: `/uploads/${filename}` });
 }

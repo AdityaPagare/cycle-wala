@@ -5,5 +5,5 @@ import { getProducts } from "@/lib/products";
    admin edits show up on the live site immediately. No auth: this is the
    same data anyone browsing the shop already sees. */
 export async function GET() {
-  return NextResponse.json(getProducts());
+  return NextResponse.json(await getProducts());
 }

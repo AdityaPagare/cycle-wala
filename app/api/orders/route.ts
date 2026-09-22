@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     const cleanItems: OrderItem[] = [];
     for (const [slug, qty] of qtyBySlug) {
-      const product = getProductBySlug(slug);
+      const product = await getProductBySlug(slug);
       if (!product) {
         return NextResponse.json({ error: "A cycle in your list is no longer available" }, { status: 400 });
       }
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       cleanItems.push({ slug: product.slug, brand: product.brand, model: product.model, price: product.price, qty });
     }
 
-    const order = createOrder({
+    const order = await createOrder({
       customer: { name, phone, address, note: clip(c.note, 400) || undefined },
       items: cleanItems,
     });

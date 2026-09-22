@@ -27,10 +27,11 @@
    a dark chip behind it (same treatment the site nav gives this logo) */
 .headerLogo {
   display: block;
-  height: 24px;
+  height: 40px;
   width: auto;
   background: #0a0a0c;
-  border-radius: 999px;
+  border-radius: 999px;  
+  padding: 10px 18px;
   padding: 8px 14px;
   flex: 0 0 auto;
 }

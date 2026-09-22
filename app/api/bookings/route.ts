@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Address is required for home service" }, { status: 400 });
     }
 
-    const booking = createBooking({
+    const booking = await createBooking({
       service: { id: service.id, title: service.title, price: service.price },
       customer: {
         name,

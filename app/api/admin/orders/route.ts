@@ -6,5 +6,5 @@ export async function GET(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  return NextResponse.json(getOrders());
+  return NextResponse.json(await getOrders());
 }

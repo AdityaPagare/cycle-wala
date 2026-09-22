@@ -1,4 +1,5 @@
-/* Order type + JSON-file persistence — same pattern as lib/products.ts.
+/* Order type + persistence — same pattern as lib/products.ts (storage itself
+ * lives in lib/storage.ts, a local file or Netlify Blobs depending on host).
  *
  * There's no payment gateway wired up (that needs a real merchant account
  * with Razorpay/Stripe/etc., which nobody has set up), so every order is
@@ -6,10 +7,9 @@
  * what they want, the shop calls to confirm, payment happens in person.
  * Nothing here pretends to process a card or charge anyone.
  */
-import path from "path";
-import { DATA_DIR, newId, readJson, writeJsonAtomic } from "@/lib/storage";
+import { newId, readCollection, writeCollection } from "@/lib/storage";
 
-const DATA_FILE = path.join(DATA_DIR, "orders.json");
+const COLLECTION = "orders";
 
 export type OrderItem = {
   slug: string;
@@ -36,22 +36,21 @@ export type Order = {
   updatedAt: string;
 };
 
-const readAll = () => readJson<Order[]>(DATA_FILE, []);
-const writeAll = (orders: Order[]) => writeJsonAtomic(DATA_FILE, orders);
+const readAll = () => readCollection<Order[]>(COLLECTION, []);
+const writeAll = (orders: Order[]) => writeCollection(COLLECTION, orders);
 
-export function getOrders(): Order[] {
-  return readAll().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+export async function getOrders(): Promise<Order[]> {
+  const orders = await readAll();
+  return orders.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-export function getOrderById(id: string): Order | undefined {
-  return readAll().find((o) => o.id === id);
+export async function getOrderById(id: string): Promise<Order | undefined> {
+  const orders = await readAll();
+  return orders.find((o) => o.id === id);
 }
 
-export function createOrder(input: {
-  customer: Order["customer"];
-  items: OrderItem[];
-}): Order {
-  const orders = readAll();
+export async function createOrder(input: { customer: Order["customer"]; items: OrderItem[] }): Promise<Order> {
+  const orders = await readAll();
   const now = new Date().toISOString();
   const total = input.items.reduce((sum, i) => sum + (i.price ?? 0) * i.qty, 0);
   const order: Order = {
@@ -64,15 +63,15 @@ export function createOrder(input: {
     updatedAt: now,
   };
   orders.push(order);
-  writeAll(orders);
+  await writeAll(orders);
   return order;
 }
 
-export function updateOrderStatus(id: string, status: OrderStatus): Order | null {
-  const orders = readAll();
+export async function updateOrderStatus(id: string, status: OrderStatus): Promise<Order | null> {
+  const orders = await readAll();
   const index = orders.findIndex((o) => o.id === id);
   if (index === -1) return null;
   orders[index] = { ...orders[index], status, updatedAt: new Date().toISOString() };
-  writeAll(orders);
+  await writeAll(orders);
   return orders[index];
 }

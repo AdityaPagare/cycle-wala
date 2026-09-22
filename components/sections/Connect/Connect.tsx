@@ -197,7 +197,12 @@ export default function Connect() {
           <a href="#home" className={styles.top}>
             {t("connect.top")}
           </a>
-          <span>© 2026 {SHOP.name}</span>
+          <span>
+            © 2026 {SHOP.name} · Developed by{" "}
+            <a href="https://adipagare-portfolio.netlify.app/" target="_blank" rel="noreferrer" className={styles.dev}>
+              Aditya Pagare
+            </a>
+          </span>
         </div>
       </footer>
     </section>
