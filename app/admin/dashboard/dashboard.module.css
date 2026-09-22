@@ -17,6 +17,23 @@
   gap: 16px;
   margin-bottom: 20px;
 }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+/* the logo file's "LE WALA" text is near-white on a transparent background —
+   legible on a dark surface, invisible on this page's light one, so it gets
+   a dark chip behind it (same treatment the site nav gives this logo) */
+.headerLogo {
+  display: block;
+  height: 24px;
+  width: auto;
+  background: #0a0a0c;
+  border-radius: 999px;
+  padding: 8px 14px;
+  flex: 0 0 auto;
+}
 
 .tabs {
   display: flex;
@@ -101,6 +118,41 @@
   border-radius: 8px;
   padding: 9px 12px;
   margin-bottom: 16px;
+}
+
+.searchWrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-3);
+  pointer-events: none;
+}
+.searchInput {
+  width: 100%;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 11px 14px 11px 38px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  transition: border-color 0.2s ease;
+}
+.searchInput::placeholder {
+  color: var(--ink-3);
+}
+.searchInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+/* the native "clear" (x) button webkit adds to type=search inputs */
+.searchInput::-webkit-search-cancel-button {
+  cursor: pointer;
 }
 .hint {
   font-size: 14px;
@@ -196,7 +248,39 @@
 }
 
 .formHead {
-  margin-bottom: 22px;
+  margin-bottom: 26px;
+}
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-3);
+  transition: color 0.2s ease;
+}
+.backLink:hover {
+  color: var(--accent-dark);
+}
+.formSub {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+.formHead .h1 {
+  margin-top: 10px;
+}
+
+.formCard {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 36px 40px;
+}
+@media (max-width: 560px) {
+  .formCard {
+    padding: 24px 20px;
+    border-radius: 18px;
+  }
 }
 
 @media (max-width: 760px) {

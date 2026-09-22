@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Instrument_Serif, Caveat, Baloo_2 } from "next/font/google";
 import SmoothScroll from "@/components/layout/SmoothScroll";
 import CartDrawer from "@/components/cart/CartDrawer";
 import { LanguageProvider } from "@/lib/i18n";
 import { CartProvider } from "@/lib/cart";
-import { SITE_URL, SHOP } from "@/lib/site";
+import { SITE_URL, SHOP, SAME_AS, ADDRESS_PARTS } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -35,6 +35,13 @@ const baloo = Baloo_2({
 
 const DESCRIPTION = SHOP.description;
 
+/* Preview image for link shares (WhatsApp, Facebook, Google) — the shop's own photo */
+const SHARE_IMAGE = { url: "/images/hero-cycle.jpg", alt: `${SHOP.name} — bicycle shop` };
+
+export const viewport: Viewport = {
+  themeColor: "#4CAF2E",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -48,12 +55,14 @@ export const metadata: Metadata = {
     url: SITE_URL,
     siteName: SHOP.name,
     type: "website",
-    locale: "en_US",
+    locale: "en_IN",
+    images: [SHARE_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: `${SHOP.name} — ${SHOP.tagline}`,
     description: DESCRIPTION,
+    images: [SHARE_IMAGE.url],
   },
 };
 
@@ -62,12 +71,13 @@ const businessJsonLd = {
   "@type": "BicycleStore",
   name: SHOP.name,
   description: SHOP.description,
-  email: SHOP.email,
+  ...(SHOP.email ? { email: SHOP.email } : {}),
   telephone: SHOP.phone,
-  address: SHOP.address,
-  openingHours: "Tu-Su 10:00-23:00",
+  address: { "@type": "PostalAddress", ...ADDRESS_PARTS },
+  openingHours: "Tu-Su 11:00-21:00",
   url: SITE_URL,
-  sameAs: SHOP.sameAs,
+  image: `${SITE_URL}${SHARE_IMAGE.url}`,
+  ...(SAME_AS.length ? { sameAs: SAME_AS } : {}),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

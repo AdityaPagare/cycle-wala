@@ -6,10 +6,10 @@
  * what they want, the shop calls to confirm, payment happens in person.
  * Nothing here pretends to process a card or charge anyone.
  */
-import fs from "fs";
 import path from "path";
+import { DATA_DIR, newId, readJson, writeJsonAtomic } from "@/lib/storage";
 
-const DATA_FILE = path.join(process.cwd(), "data", "orders.json");
+const DATA_FILE = path.join(DATA_DIR, "orders.json");
 
 export type OrderItem = {
   slug: string;
@@ -36,18 +36,8 @@ export type Order = {
   updatedAt: string;
 };
 
-function readAll(): Order[] {
-  try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
-  } catch {
-    return [];
-  }
-}
-
-function writeAll(orders: Order[]) {
-  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(orders, null, 2));
-}
+const readAll = () => readJson<Order[]>(DATA_FILE, []);
+const writeAll = (orders: Order[]) => writeJsonAtomic(DATA_FILE, orders);
 
 export function getOrders(): Order[] {
   return readAll().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -65,7 +55,7 @@ export function createOrder(input: {
   const now = new Date().toISOString();
   const total = input.items.reduce((sum, i) => sum + (i.price ?? 0) * i.qty, 0);
   const order: Order = {
-    id: `CW-${Date.now().toString(36).toUpperCase()}`,
+    id: newId("CW"),
     customer: input.customer,
     items: input.items,
     total,

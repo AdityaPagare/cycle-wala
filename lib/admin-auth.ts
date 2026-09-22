@@ -1,38 +1,86 @@
-/* Admin auth — email + password, checked against hardcoded credentials.
- * Fails CLOSED: if credentials don't match, every request is rejected.
+/* Admin auth — email + password, then a signed session cookie.
  *
- * The credential travels as `Bearer base64(email:password)` — the same
- * header the rest of the admin API already expected, so only what's
- * *inside* the bearer value changed, not the request shape. It is never
- * echoed back by any API response.
+ * The password is checked once, at login (POST /api/admin/auth). What the
+ * browser keeps afterwards is an HttpOnly cookie holding `expiry.signature`:
+ * page scripts can't read it, it is never the password, it expires on its
+ * own, and it is only sent to /api/admin/*. Changing ADMIN_PASSWORD (or
+ * ADMIN_SESSION_SECRET) instantly invalidates every existing session.
+ *
+ * Everything fails CLOSED: with no usable credentials configured, every
+ * request is rejected.
+ *
+ * Production: set ADMIN_EMAIL and ADMIN_PASSWORD (10+ characters) in the
+ * host's environment. The built-in development login below is ignored when
+ * NODE_ENV is "production".
  */
+import { createHash, createHmac, timingSafeEqual } from "crypto";
 import type { NextRequest } from "next/server";
 
-// Hardcoded admin credentials
-const ADMIN_EMAIL = "gauravtote@cyclewala.com";
-const ADMIN_PASSWORD = "12345";
+export const SESSION_COOKIE = "cw_admin";
+export const SESSION_MS = 12 * 60 * 60 * 1000;
+const MIN_PASSWORD = 10;
 
-function decodeCredential(token: string): { email: string; password: string } | null {
-  try {
-    const decoded = Buffer.from(token, "base64").toString("utf-8");
-    const sep = decoded.indexOf(":");
-    if (sep === -1) return null;
-    return { email: decoded.slice(0, sep), password: decoded.slice(sep + 1) };
-  } catch {
-    return null;
+const DEV_LOGIN = { email: "gauravtote@cyclewala.com", password: "12345" };
+
+function credentials(): { email: string; password: string } | null {
+  const email = process.env.ADMIN_EMAIL?.trim();
+  const password = process.env.ADMIN_PASSWORD;
+
+  if (process.env.NODE_ENV !== "production") {
+    return email && password ? { email, password } : DEV_LOGIN;
   }
+  if (!email || !password || password.length < MIN_PASSWORD) return null;
+  return { email, password };
+}
+
+const digest = (s: string) => createHash("sha256").update(s).digest();
+const safeEqual = (a: string, b: string) => timingSafeEqual(digest(a), digest(b));
+
+export function verifyLogin(email: string, password: string): boolean {
+  const c = credentials();
+  if (!c) {
+    console.error(
+      `[admin] Login refused: set ADMIN_EMAIL and an ADMIN_PASSWORD of at least ${MIN_PASSWORD} characters in the server environment.`
+    );
+    return false;
+  }
+  // evaluate both so the response time doesn't reveal which one was wrong
+  const emailOk = safeEqual(email.trim().toLowerCase(), c.email.toLowerCase());
+  const passOk = safeEqual(password, c.password);
+  return emailOk && passOk;
+}
+
+function sign(expiry: number): string | null {
+  const c = credentials();
+  if (!c) return null;
+  const key = process.env.ADMIN_SESSION_SECRET || c.password;
+  return createHmac("sha256", key).update(`admin:${expiry}:${c.email.toLowerCase()}`).digest("hex");
+}
+
+export function createSessionToken(): string | null {
+  const expiry = Date.now() + SESSION_MS;
+  const sig = sign(expiry);
+  return sig ? `${expiry}.${sig}` : null;
 }
 
 export function isAuthorized(request: NextRequest): boolean {
-  // Check if hardcoded credentials are available
-  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) return false;
-
-  const header = request.headers.get("authorization");
-  const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
   if (!token) return false;
 
-  const creds = decodeCredential(token);
-  if (!creds) return false;
+  const dot = token.indexOf(".");
+  if (dot === -1) return false;
+  const expiry = Number(token.slice(0, dot));
+  if (!Number.isFinite(expiry) || expiry < Date.now()) return false;
 
-  return creds.email === ADMIN_EMAIL && creds.password === ADMIN_PASSWORD;
+  const expected = sign(expiry);
+  return !!expected && safeEqual(token.slice(dot + 1), expected);
+}
+
+/** Use the Secure flag whenever the request came in over HTTPS (directly or
+ *  through a proxy), so plain-http local runs still work. */
+export function isSecureRequest(request: NextRequest): boolean {
+  return (
+    request.nextUrl.protocol === "https:" ||
+    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() === "https"
+  );
 }

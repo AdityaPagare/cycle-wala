@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthorized } from "@/lib/admin-auth";
+import { UPLOAD_DIR } from "@/lib/storage";
 import fs from "fs";
 import path from "path";
 
-const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 5 * 1024 * 1024;
-const EXT: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
 
-/* Admin photo upload — saves into public/images/shop/uploads/ and returns
-   the path to store on the product. Filename is derived from the slug the
-   admin is editing, never from the uploaded file's own name. */
+/* What the file actually IS, judged by its first bytes — the browser-supplied
+   type and filename are never trusted. */
+function sniff(b: Buffer): "jpg" | "png" | "webp" | null {
+  if (b.length > 12 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "jpg";
+  if (b.length > 12 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "png";
+  if (b.length > 12 && b.toString("ascii", 0, 4) === "RIFF" && b.toString("ascii", 8, 12) === "WEBP") return "webp";
+  return null;
+}
+
+/* Admin photo upload — saves into DATA_DIR/uploads/ (served back at
+   /uploads/<file>, see app/uploads/[file]/route.ts) and returns the path to
+   store on the product. The filename comes from the product slug, never from
+   the uploaded file's own name. */
 export async function POST(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -26,22 +31,22 @@ export async function POST(request: NextRequest) {
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
-  if (typeof slug !== "string" || !/^[a-z0-9-]+$/.test(slug)) {
+  if (typeof slug !== "string" || !/^[a-z0-9-]{1,80}$/.test(slug)) {
     return NextResponse.json({ error: "Missing or invalid slug" }, { status: 400 });
-  }
-  if (!ALLOWED.has(file.type)) {
-    return NextResponse.json({ error: "Only JPEG, PNG or WEBP images are allowed" }, { status: 400 });
   }
   if (file.size > MAX_BYTES) {
     return NextResponse.json({ error: "Image must be 5MB or smaller" }, { status: 400 });
   }
 
-  const dir = path.join(process.cwd(), "public", "images", "shop", "uploads");
-  fs.mkdirSync(dir, { recursive: true });
-
-  const filename = `${slug}-${Date.now()}.${EXT[file.type]}`;
   const bytes = Buffer.from(await file.arrayBuffer());
-  fs.writeFileSync(path.join(dir, filename), bytes);
+  const ext = sniff(bytes);
+  if (!ext) {
+    return NextResponse.json({ error: "Only JPEG, PNG or WEBP images are allowed" }, { status: 400 });
+  }
 
-  return NextResponse.json({ path: `/images/shop/uploads/${filename}` });
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  const filename = `${slug}-${Date.now()}.${ext}`;
+  fs.writeFileSync(path.join(UPLOAD_DIR, filename), bytes);
+
+  return NextResponse.json({ path: `/uploads/${filename}` });
 }

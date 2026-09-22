@@ -1,7 +1,7 @@
 /* Starting catalogue for the admin-managed product database.
  *
  * Brand, model, sizes and specs are transcribed from the shop's own
- * supplier datasheets/catalogues (public/documents/) — nothing invented.
+ * supplier datasheets/catalogues (content/catalogues/) — nothing invented.
  * `price: null` until the admin sets a real one in /admin.
  *
  * `rating` is illustrative only (no real review data exists yet) — shown

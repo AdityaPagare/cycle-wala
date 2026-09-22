@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCart } from "@/lib/cart";
 import { SHOP } from "@/lib/site";
+import { isValidIndianMobile, PHONE_HINT } from "@/lib/validate";
 import styles from "./CartDrawer.module.css";
 
 type Step = "cart" | "checkout" | "confirmed";
@@ -15,11 +16,15 @@ export default function CartDrawer() {
   const [step, setStep] = useState<Step>("cart");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [orderId, setOrderId] = useState("");
+
+  const phoneValid = isValidIndianMobile(phone);
+  const showPhoneError = phoneTouched && phone.trim() !== "" && !phoneValid;
 
   if (!open) return null;
 
@@ -43,6 +48,11 @@ export default function CartDrawer() {
     setError("");
     if (!name.trim() || !phone.trim() || !address.trim()) {
       setError("Name, phone and address are required.");
+      return;
+    }
+    if (!phoneValid) {
+      setPhoneTouched(true);
+      setError(PHONE_HINT);
       return;
     }
     setSubmitting(true);
@@ -97,38 +107,55 @@ export default function CartDrawer() {
           </div>
         ) : step === "checkout" ? (
           <form className={styles.checkoutForm} onSubmit={placeOrder}>
-            <div className={styles.checkoutItems}>
-              {items.map((i) => (
-                <div className={styles.checkoutItem} key={i.slug}>
-                  <span>
-                    {i.brand} {i.model} × {i.qty}
-                  </span>
-                  <span>{i.price === null ? "Add: price" : `₹${(i.price * i.qty).toLocaleString("en-IN")}`}</span>
-                </div>
-              ))}
+            <div className={styles.checkoutScroll}>
+              <div className={styles.checkoutItems}>
+                {items.map((i) => (
+                  <div className={styles.checkoutItem} key={i.slug}>
+                    <span>
+                      {i.brand} {i.model} × {i.qty}
+                    </span>
+                    <span>{i.price === null ? "Add: price" : `₹${(i.price * i.qty).toLocaleString("en-IN")}`}</span>
+                  </div>
+                ))}
+              </div>
+
+              <label className={styles.field}>
+                Full name
+                <input value={name} onChange={(e) => setName(e.target.value)} required />
+              </label>
+              <label className={styles.field}>
+                Phone
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  maxLength={16}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  onBlur={() => setPhoneTouched(true)}
+                  aria-invalid={showPhoneError}
+                  className={showPhoneError ? styles.fieldInvalid : undefined}
+                  required
+                />
+                {showPhoneError && <span className={styles.fieldError}>{PHONE_HINT}</span>}
+              </label>
+              <label className={styles.field}>
+                Delivery / pickup address
+                <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} required />
+              </label>
+              <label className={styles.field}>
+                Note (optional)
+                <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Colour, size, anything else" />
+              </label>
+
+              {error && <p className={styles.error}>{error}</p>}
+
+              <p className={styles.payNote}>Pay at Store / Cash on Delivery — no card details needed.</p>
             </div>
 
-            <label className={styles.field}>
-              Full name
-              <input value={name} onChange={(e) => setName(e.target.value)} required />
-            </label>
-            <label className={styles.field}>
-              Phone
-              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required />
-            </label>
-            <label className={styles.field}>
-              Delivery / pickup address
-              <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} required />
-            </label>
-            <label className={styles.field}>
-              Note (optional)
-              <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Colour, size, anything else" />
-            </label>
-
-            {error && <p className={styles.error}>{error}</p>}
-
-            <p className={styles.payNote}>Pay at Store / Cash on Delivery — no card details needed.</p>
-
+            {/* pinned outside the scrolling area above, so it's always on
+                screen — never requires scrolling past a long form or a
+                phone's on-screen keyboard to reach it */}
             <div className={styles.checkoutActions}>
               <button type="button" className={styles.back} onClick={() => setStep("cart")}>
                 ← Back

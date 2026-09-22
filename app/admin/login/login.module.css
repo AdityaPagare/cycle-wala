@@ -16,16 +16,21 @@
   padding: 36px 32px;
 }
 
-.kicker {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--accent-dark);
+/* the logo file's "LE WALA" text is near-white on a transparent background —
+   legible on a dark surface, invisible on this card's white one, so it gets
+   a dark chip behind it (same treatment the site nav gives this logo) */
+.logo {
+  display: block;
+  height: 26px;
+  width: auto;
+  margin: 0 auto;
+  background: #0a0a0c;
+  border-radius: 999px;
+  padding: 9px 16px;
 }
 
 .h1 {
-  margin-top: 8px;
+  margin-top: 20px;
   font-size: 26px;
   font-weight: 900;
   letter-spacing: -0.02em;

@@ -20,6 +20,62 @@
   gap: 14px;
 }
 
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.count {
+  font-size: 13.5px;
+  color: var(--ink-3);
+}
+.download {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--accent);
+  padding: 9px 18px;
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+.download:hover {
+  background: var(--accent-dark);
+}
+
+.searchWrap {
+  position: relative;
+}
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-3);
+  pointer-events: none;
+}
+.searchInput {
+  width: 100%;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 11px 14px 11px 38px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  transition: border-color 0.2s ease;
+}
+.searchInput::placeholder {
+  color: var(--ink-3);
+}
+.searchInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.searchInput::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
 .card {
   background: #fff;
   border-radius: 14px;

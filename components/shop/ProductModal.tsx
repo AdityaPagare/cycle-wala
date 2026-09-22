@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import type { Product } from "@/lib/products";
 import { useCart } from "@/lib/cart";
 import { SHOP } from "@/lib/site";
@@ -15,7 +16,11 @@ const CATEGORY_LABEL: Record<string, string> = {
 export default function ProductModal({ product, onClose }: { product: Product; onClose: () => void }) {
   const { addToCart } = useCart();
 
-  return (
+  /* Rendered into <body>, not inside the shop section: a stacked section is
+     its own layer, so a modal left inside it could be painted over by the
+     sections that slide up after it. Only ever mounted after a click, so
+     `document` always exists. */
+  return createPortal(
     <>
       <button className={styles.scrim} aria-label="Close" onClick={onClose} />
       <div className={styles.modal} role="dialog" aria-modal="true" aria-label={`${product.brand} ${product.model}`}>
@@ -74,6 +79,7 @@ export default function ProductModal({ product, onClose }: { product: Product; o
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

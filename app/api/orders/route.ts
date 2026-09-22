@@ -1,39 +1,68 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrder, type OrderItem } from "@/lib/orders";
+import { getProductBySlug } from "@/lib/products";
+import { rateLimit, tooMany } from "@/lib/rate-limit";
+import { isValidIndianMobile } from "@/lib/validate";
 
-/* Public endpoint — anyone checking out submits here, no auth (this is
-   the same trust level as walking into the shop and giving your name).
-   Basic shape/length validation only; no payment is processed. */
+/* Public endpoint — anyone checking out submits here, no auth (this is the
+   same trust level as walking into the shop and giving your name).
+
+   The browser only says WHICH cycles and HOW MANY. The brand, model and price
+   of every line are looked up here from the live catalogue, so a tampered
+   request can't change what an order costs. No payment is processed. */
+const clip = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+
 export async function POST(request: NextRequest) {
+  // 6 orders per hour per address is plenty for a real customer
+  if (!rateLimit(request, "order", 6, 60 * 60_000)) return tooMany();
+
   try {
     const body = await request.json();
-    const { customer, items } = body ?? {};
+    const c = body?.customer ?? {};
+    const name = clip(c.name, 100);
+    const phone = clip(c.phone, 20);
+    const address = clip(c.address, 400);
 
-    if (!customer?.name?.trim() || !customer?.phone?.trim() || !customer?.address?.trim()) {
+    if (!name || !phone || !address) {
       return NextResponse.json({ error: "Name, phone and address are required" }, { status: 400 });
     }
-    if (customer.name.length > 100 || customer.phone.length > 30 || customer.address.length > 400) {
-      return NextResponse.json({ error: "One of the fields is too long" }, { status: 400 });
+    if (!isValidIndianMobile(phone)) {
+      return NextResponse.json({ error: "Please enter a valid 10-digit mobile number" }, { status: 400 });
     }
+
+    const items = body?.items;
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "Your list is empty" }, { status: 400 });
     }
+    if (items.length > 20) {
+      return NextResponse.json({ error: "Too many different cycles in one order" }, { status: 400 });
+    }
 
-    const cleanItems: OrderItem[] = items.map((i) => ({
-      slug: String(i.slug ?? ""),
-      brand: String(i.brand ?? ""),
-      model: String(i.model ?? ""),
-      price: i.price === null || i.price === undefined ? null : Number(i.price),
-      qty: Math.max(1, Math.min(20, Number(i.qty) || 1)),
-    }));
+    // merge repeats of the same cycle, then price every line from the catalogue
+    const qtyBySlug = new Map<string, number>();
+    for (const i of items) {
+      const slug = clip(i?.slug, 80);
+      const qty = Math.max(1, Math.min(20, Math.floor(Number(i?.qty)) || 1));
+      qtyBySlug.set(slug, Math.min(20, (qtyBySlug.get(slug) ?? 0) + qty));
+    }
+
+    const cleanItems: OrderItem[] = [];
+    for (const [slug, qty] of qtyBySlug) {
+      const product = getProductBySlug(slug);
+      if (!product) {
+        return NextResponse.json({ error: "A cycle in your list is no longer available" }, { status: 400 });
+      }
+      if (!product.inStock) {
+        return NextResponse.json(
+          { error: `${product.brand} ${product.model} is out of stock right now` },
+          { status: 400 }
+        );
+      }
+      cleanItems.push({ slug: product.slug, brand: product.brand, model: product.model, price: product.price, qty });
+    }
 
     const order = createOrder({
-      customer: {
-        name: String(customer.name).trim(),
-        phone: String(customer.phone).trim(),
-        address: String(customer.address).trim(),
-        note: customer.note ? String(customer.note).trim().slice(0, 400) : undefined,
-      },
+      customer: { name, phone, address, note: clip(c.note, 400) || undefined },
       items: cleanItems,
     });
 

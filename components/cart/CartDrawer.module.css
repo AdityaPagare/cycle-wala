@@ -195,11 +195,22 @@
   color: var(--ink);
 }
 
-/* ---------- checkout form ---------- */
+/* ---------- checkout form ----------
+   The scrollable fields and the action buttons are separate flex children
+   (not one scrolling blob) so Place Order stays pinned on screen — the same
+   pattern .items/.foot already use below — instead of needing a scroll past
+   a long item list, a validation error, or a phone's on-screen keyboard. */
 .checkoutForm {
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.checkoutScroll {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 18px 22px 22px;
+  padding: 18px 22px 14px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -246,6 +257,17 @@
 .field textarea {
   resize: vertical;
 }
+.field input.fieldInvalid {
+  border-color: #b3261e;
+}
+.field input.fieldInvalid:focus {
+  border-color: #b3261e;
+}
+.fieldError {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #b3261e;
+}
 .error {
   font-size: 13px;
   font-weight: 600;
@@ -263,9 +285,12 @@
   padding: 9px 12px;
 }
 .checkoutActions {
+  flex: 0 0 auto;
   display: flex;
   gap: 10px;
-  margin-top: 4px;
+  padding: 14px 22px 22px;
+  border-top: 1px solid var(--line);
+  background: #fff;
 }
 .back {
   font-size: 13px;

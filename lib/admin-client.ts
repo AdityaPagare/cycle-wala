@@ -1,38 +1,34 @@
 "use client";
 
-/* Client-side helpers for the admin panel. After a successful email +
-   password check, the login page stores the base64(email:password)
-   credential here — in localStorage only, never sent anywhere except the
-   Authorization header on admin API calls. Every admin fetch goes through
-   `adminFetch` so a 401 always bounces back to the login screen instead of
+/* Client-side helpers for the admin panel. Signing in sets an HttpOnly
+   session cookie (see lib/admin-auth.ts) — nothing secret is ever stored
+   where page scripts can read it. Every admin fetch goes through `adminFetch`
+   so an expired session always bounces back to the login screen instead of
    showing a silently-broken dashboard. */
 
-const KEY = "cw_admin_token";
-
-export function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(KEY);
+/** true if the browser currently holds a valid admin session */
+export async function hasAdminSession(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/admin/auth", { cache: "no-store" });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
-export function setAdminToken(token: string) {
-  window.localStorage.setItem(KEY, token);
-}
-
-export function clearAdminToken() {
-  window.localStorage.removeItem(KEY);
+export async function adminLogout() {
+  try {
+    await fetch("/api/admin/auth", { method: "DELETE" });
+  } catch {
+    /* offline — the cookie simply expires on its own */
+  }
 }
 
 export async function adminFetch(input: string, init: RequestInit = {}) {
-  const token = getAdminToken();
-  const res = await fetch(input, {
-    ...init,
-    headers: {
-      ...(init.headers ?? {}),
-      Authorization: `Bearer ${token ?? ""}`,
-    },
-  });
+  const res = await fetch(input, { ...init, cache: "no-store" });
   if (res.status === 401) {
-    clearAdminToken();
+    // hard navigation on purpose: drops any half-loaded admin state
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = "/admin/login";
     throw new Error("Session expired");
   }

@@ -32,7 +32,8 @@ html {
    anchor jumps, scrollIntoView and reduced-motion; lib/lenis.ts applies the
    same offset to the smooth-scrolled path */
 :root {
-  --nav-offset: 96px;
+  /* the floating capsule's own height plus a little breathing room */
+  --nav-offset: 92px;
 }
 section[id],
 [id] {
@@ -74,6 +75,13 @@ body {
 img {
   max-width: 100%;
   display: block;
+}
+
+/* Sections that slide in sideways (StackSection enter="right") wait off-screen
+   to the right; clip that so the page never grows a horizontal scrollbar or
+   pans sideways on phones. `clip` — not `hidden` — so sticky keeps working. */
+main {
+  overflow-x: clip;
 }
 
 /* The closing frame: rises over the last sticky scene and covers it, then

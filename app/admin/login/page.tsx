@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
-import { setAdminToken } from "@/lib/admin-client";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -17,14 +17,15 @@ export default function AdminLogin() {
     setError("");
     setLoading(true);
     try {
-      const credential = btoa(`${email}:${password}`);
       const res = await fetch("/api/admin/auth", {
         method: "POST",
-        headers: { Authorization: `Bearer ${credential}` },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
       if (res.ok) {
-        setAdminToken(credential);
         router.push("/admin/dashboard");
+      } else if (res.status === 429) {
+        setError("Too many attempts. Please wait a few minutes and try again.");
       } else {
         setError("Incorrect email or password.");
       }
@@ -38,7 +39,8 @@ export default function AdminLogin() {
   return (
     <main className={styles.page}>
       <div className={styles.card}>
-        <p className={styles.kicker}>Cycle Wala</p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/logo/cyclewala-logo-remove-back.png" alt="Cycle Wala" className={styles.logo} />
         <h1 className={styles.h1}>Admin Access</h1>
         <p className={styles.sub}>Manage cycles, prices and photos.</p>
 
@@ -49,7 +51,8 @@ export default function AdminLogin() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@cyclewala.example"
+              placeholder="Your admin email"
+              autoComplete="username"
               className={styles.input}
               autoFocus
               required
@@ -63,6 +66,7 @@ export default function AdminLogin() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
+              autoComplete="current-password"
               className={styles.input}
               required
             />
@@ -75,9 +79,9 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        <a href="/" className={styles.back}>
+        <Link href="/" className={styles.back}>
           ← Back to the site
-        </a>
+        </Link>
       </div>
     </main>
   );

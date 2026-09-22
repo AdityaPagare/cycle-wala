@@ -32,6 +32,13 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# customer data + uploaded photos — never commit (names, phones, addresses)
+/data/orders.json
+/data/bookings.json
+/data/uploads/
+*.tmp
 
 # vercel
 .vercel

@@ -105,16 +105,6 @@ export default function Nav() {
 
   return (
     <header className={`${styles.wrap} ${scrolled ? styles.scrolled : ""}`} ref={ref}>
-      {/* ---------- utility strip — real facts only ---------- */}
-      <div className={styles.utility}>
-        <span className={styles.utilityLoc}>
-          Chh. Sambhajinagar · {SHOP.hours}
-        </span>
-        <a className={styles.utilityPhone} href={SHOP.phoneHref}>
-          ☎ {SHOP.phone}
-        </a>
-      </div>
-
       {/* ---------- main bar ---------- */}
       <div className={styles.main}>
         <a href="#home" className={styles.logo} aria-label={t("nav.home")}>

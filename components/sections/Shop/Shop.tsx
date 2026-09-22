@@ -10,16 +10,22 @@ import styles from "./Shop.module.css";
 import { useLang } from "@/lib/i18n";
 
 /* The 5 brands behind the models above — real, from the shop's own supplier
-   catalogues (public/documents/). */
+   catalogues (content/catalogues/). */
 const BRANDS = [
-  { name: "Neufman", note: "Mountain cycles — TIG-welded frames, disc brakes." },
-  { name: "Denvok", note: "City, hybrid and kids' cycles for everyday riding." },
-  { name: "Schnell", note: "MTB, hybrid and road cycles for serious riders." },
-  { name: "Keysto", note: "MTB, women's and kids' cycles, wide range." },
-  { name: "Oyekid", note: "Dedicated kids' cycles, sized to grow with your child." },
+  { name: "Neufman", note: "Mountain cycles — TIG-welded frames, disc brakes.", logo: "/images/logo/NeufmanLogo.png" },
+  { name: "Denvok", note: "City, hybrid and kids' cycles for everyday riding.", logo: "/images/logo/denvoklogo.png" },
+  { name: "Schnell", note: "MTB, hybrid and road cycles for serious riders.", logo: "/images/logo/schnelllogo.png" },
+  { name: "Keysto", note: "MTB, women's and kids' cycles, wide range.", logo: "/images/logo/keystologo.png" },
+  // confirmed against Oyekid's own 2026 product catalogue cover
+  // (content/catalogues/Catalog 2026.pdf) — this circular mark is genuinely theirs
+  { name: "Oyekid", note: "Dedicated kids' cycles, sized to grow with your child.", logo: "/images/logo/oyekidlogo.png" },
 ];
 
 type SortKey = "featured" | "price-asc" | "price-desc" | "rating";
+
+/* the home page shows a preview so a big catalogue doesn't turn into an
+   endless scroll — "See All Cycles" reveals the rest in place */
+const PAGE_SIZE = 8;
 
 const CIRCLES: { id: "all" | ProductCategory; label: string; image: string }[] = [
   { id: "all", label: "All Cycles", image: "/images/hero-cycle.jpg" },
@@ -37,6 +43,49 @@ function BikeGlyph() {
         <path d="M9 12.5h5.5" />
         <path d="M11 8l1.3-2h2.2" />
       </g>
+    </svg>
+  );
+}
+
+/* Loader icon — a colourful cartoon bicycle whose wheels actually spin
+   (each wheel is its own group so it can carry its own CSS rotation; the
+   frame stays still, same as a wheel spinning under a parked cycle). */
+function SpinningBikeGlyph() {
+  const wheel = (cx: number, hub: string) => (
+    <g className={styles.wheel} style={{ transformOrigin: `${cx}px 50px` }}>
+      <ellipse cx={cx} cy="74" rx="20" ry="4" fill="#000" opacity="0.12" />
+      <circle cx={cx} cy="50" r="22" fill="#FFD41F" stroke="#1F3350" strokeWidth="2.5" />
+      {[0, 45, 90, 135].map((deg) => (
+        <line
+          key={deg}
+          x1={cx - 18 * Math.cos((deg * Math.PI) / 180)}
+          y1={50 - 18 * Math.sin((deg * Math.PI) / 180)}
+          x2={cx + 18 * Math.cos((deg * Math.PI) / 180)}
+          y2={50 + 18 * Math.sin((deg * Math.PI) / 180)}
+          stroke="#1F3350"
+          strokeWidth="2"
+        />
+      ))}
+      <circle cx={cx} cy="50" r="4.5" fill={hub} />
+    </g>
+  );
+
+  return (
+    <svg viewBox="0 0 120 80" width="64" height="46" aria-hidden="true">
+      {wheel(24, "#4FC3E8")}
+      {wheel(96, "#E8344F")}
+      {/* static frame, seat, handlebar, pedal crank and flag — sits above
+          the wheels so it reads as "attached" while they spin beneath it */}
+      <g fill="none" stroke="#1F3350" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M24 50 L58 18 L96 50" />
+        <path d="M58 18 L60 50" />
+        <path d="M60 50 L96 50" />
+        <path d="M80 22 L96 50" />
+        <path d="M74 22 L86 22" />
+      </g>
+      <rect x="50" y="12" width="16" height="6" rx="3" fill="#101820" />
+      <path d="M62 16 L72 8 L67 14 Z" fill="#FF4D7D" />
+      <circle cx="60" cy="50" r="5" fill="#1F3350" />
     </svg>
   );
 }
@@ -109,6 +158,7 @@ export default function Shop() {
   const [sort, setSort] = useState<SortKey>("featured");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const circlesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -119,12 +169,24 @@ export default function Shop() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- brief "curating" loader whenever the category changes
     setLoading(true);
     const id = setTimeout(() => setLoading(false), 450);
     return () => clearTimeout(id);
   }, [selectedCategories]);
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a new filter/search/sort result starts back at the compact preview
+    setShowAll(false);
+  }, [selectedCategories, minPrice, maxPrice, minRating, inStockOnly, query, sort]);
+
   const scrollCircles = (dir: 1 | -1) => circlesRef.current?.scrollBy({ left: dir * 180, behavior: "smooth" });
+
+  const showBrand = (name: string) => {
+    setSelectedCategories((prev) => (prev.length ? [] : prev));
+    setQuery(name);
+    document.getElementById("shop")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const toggleCategory = (c: ProductCategory) => {
     setSelectedCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
@@ -151,6 +213,9 @@ export default function Shop() {
     return sorted;
   }, [products, selectedCategories, minPrice, maxPrice, minRating, inStockOnly, query, sort]);
 
+  const visible = showAll ? filtered : filtered.slice(0, PAGE_SIZE);
+  const remaining = filtered.length - visible.length;
+
   const activeFilterCount =
     selectedCategories.length + (minPrice ? 1 : 0) + (maxPrice ? 1 : 0) + (minRating ? 1 : 0) + (inStockOnly ? 1 : 0) + (query ? 1 : 0);
   const clearAll = () => {
@@ -163,7 +228,7 @@ export default function Shop() {
   };
 
   return (
-    <section className={styles.shop} id="shop">
+    <section className={styles.shop}>
       <div className={styles.wrap}>
         {/* ---------- circular category selector ---------- */}
         <div className={styles.circlesRow}>
@@ -199,7 +264,7 @@ export default function Shop() {
         {loading || !products ? (
           <div className={styles.loader}>
             <span className={styles.loaderIcon}>
-              <BikeGlyph />
+              <SpinningBikeGlyph />
             </span>
             <p>{t("shop.loading")}</p>
           </div>
@@ -351,7 +416,7 @@ export default function Shop() {
                 </div>
               ) : (
                 <div className={view === "grid" ? styles.grid : styles.list}>
-                  {filtered.map((item) => (
+                  {visible.map((item) => (
                     <article className={view === "grid" ? styles.card : styles.cardList} key={item.slug}>
                       <div className={styles.cardPhoto}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -398,21 +463,60 @@ export default function Shop() {
                   ))}
                 </div>
               )}
+
+              {remaining > 0 && (
+                <div className={styles.seeAllWrap}>
+                  <p className={styles.seeAllHint}>
+                    {remaining} more cycle{remaining === 1 ? "" : "s"} waiting to be discovered
+                  </p>
+                  <button className={styles.seeAllBtn} onClick={() => setShowAll(true)}>
+                    <span>Explore Full Collection</span>
+                    <span className={styles.seeAllArrow} aria-hidden="true">
+                      →
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {/* ---------- brands we carry ---------- */}
-        <div className={styles.brandsBlock}>
-          <p className={styles.catNo}>{t("shop.brandsNo")}</p>
-          <h3 className={styles.catLabel}>{t("shop.brandsLabel")}</h3>
+        <div className={styles.brands}>
+          <div className={styles.brandsHead}>
+            <span className={styles.brandsPill}>Our Brands</span>
+            <h3 className={styles.brandsTitle}>
+              Brands We <em className={styles.brandsEm}>Carry</em>
+            </h3>
+            <p className={styles.brandsLede}>The five makers behind every cycle in the shop.</p>
+          </div>
+
           <div className={styles.brandsGrid}>
-            {BRANDS.map((b) => (
-              <div className={styles.brandCard} key={b.name}>
-                <span className={styles.brandName}>{b.name}</span>
-                <span className={styles.brandNote}>{b.note}</span>
-              </div>
-            ))}
+            {BRANDS.map((b) => {
+              const n = products ? products.filter((p) => p.brand.toLowerCase() === b.name.toLowerCase()).length : null;
+              return (
+                <button type="button" className={styles.brandCard} key={b.name} onClick={() => showBrand(b.name)}>
+                  <span className={styles.brandMark}>
+                    {b.logo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={b.logo} alt="" className={styles.brandMarkImg} />
+                    ) : (
+                      b.name[0]
+                    )}
+                  </span>
+                  <span className={styles.brandName}>{b.name}</span>
+                  <span className={styles.brandNote}>{b.note}</span>
+                  <span className={styles.brandFoot}>
+                    <span className={styles.brandCount}>
+                      {n === null ? " " : `${n} model${n === 1 ? "" : "s"} in shop`}
+                    </span>
+                    <span className={styles.brandGo} aria-hidden="true">
+                      View →
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
